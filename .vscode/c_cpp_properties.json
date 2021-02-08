@@ -10,6 +10,7 @@
             "includePath": [
                 "d:/Programming/Projects/MySensors/MySensorsNode/MySensorsBME280Node/include",
                 "d:/Programming/Projects/MySensors/MySensorsNode/MySensorsBME280Node/src",
+                "d:/Programming/Projects/MySensors/MySensorsNode/MySensorsBME280Node/.pio/libdeps/nrf52_dk/Adafruit BME280 Library",
                 "d:/Programming/Projects/MySensors/MySensorsNode/MySensorsBME280Node/.pio/libdeps/nrf52_dk/MySensors",
                 "C:/Users/rises/.platformio/packages/framework-arduinonordicnrf5/libraries/SPI",
                 "C:/Users/rises/.platformio/packages/framework-arduinonordicnrf5/libraries/Wire",
@@ -19,6 +20,7 @@
                 "C:/Users/rises/.platformio/packages/framework-arduinonordicnrf5/cores/nRF5/SDK/components/toolchain",
                 "C:/Users/rises/.platformio/packages/framework-arduinonordicnrf5/cores/nRF5/SDK/components/toolchain/CMSIS/Include",
                 "C:/Users/rises/.platformio/packages/framework-arduinonordicnrf5/variants/nRF52DK",
+                "d:/Programming/Projects/MySensors/MySensorsNode/MySensorsBME280Node/.pio/libdeps/nrf52_dk/Adafruit Unified Sensor",
                 "C:/Users/rises/.platformio/packages/tool-unity",
                 ""
             ],
@@ -27,6 +29,7 @@
                 "path": [
                     "d:/Programming/Projects/MySensors/MySensorsNode/MySensorsBME280Node/include",
                     "d:/Programming/Projects/MySensors/MySensorsNode/MySensorsBME280Node/src",
+                    "d:/Programming/Projects/MySensors/MySensorsNode/MySensorsBME280Node/.pio/libdeps/nrf52_dk/Adafruit BME280 Library",
                     "d:/Programming/Projects/MySensors/MySensorsNode/MySensorsBME280Node/.pio/libdeps/nrf52_dk/MySensors",
                     "C:/Users/rises/.platformio/packages/framework-arduinonordicnrf5/libraries/SPI",
                     "C:/Users/rises/.platformio/packages/framework-arduinonordicnrf5/libraries/Wire",
@@ -36,6 +39,7 @@
                     "C:/Users/rises/.platformio/packages/framework-arduinonordicnrf5/cores/nRF5/SDK/components/toolchain",
                     "C:/Users/rises/.platformio/packages/framework-arduinonordicnrf5/cores/nRF5/SDK/components/toolchain/CMSIS/Include",
                     "C:/Users/rises/.platformio/packages/framework-arduinonordicnrf5/variants/nRF52DK",
+                    "d:/Programming/Projects/MySensors/MySensorsNode/MySensorsBME280Node/.pio/libdeps/nrf52_dk/Adafruit Unified Sensor",
                     "C:/Users/rises/.platformio/packages/tool-unity",
                     ""
                 ]
