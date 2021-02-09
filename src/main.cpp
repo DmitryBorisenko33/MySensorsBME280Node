@@ -30,7 +30,7 @@ void setup() {
 }
 
 void presentation() {
-    sendSketchInfo("IoT Manager BME280 Node", "1.0.0");
+    sendSketchInfo("IoT Manager BME280 Node", "1.0.1");
     present(0, S_MULTIMETER);
     present(1, S_TEMP);
     present(2, S_HUM);
@@ -43,6 +43,7 @@ void loop() {
     float tmp = bme.readTemperature();
     float hum = bme.readHumidity();
     float prs = bme.readPressure();
+    prs = prs / 1.333224 / 100;
 
     sendMsgFastAck(0, V_VOLTAGE, batteryVoltage, false);
     sendMsgFastAck(1, V_TEMP, tmp, false);
