@@ -10,10 +10,11 @@ void preHwInit() {
 }
 
 void before() {
-//NRF_POWER->DCDCEN = 1; //включение режима оптимизации питания, расход снижается на 40%, но должны быть установленны емкости
+//NRF_POWER->DCDCEN = 1; //включение режима оптимизации питания, расход снижается на 40%, но должны быть установленны емкости (если нода сделана на модуле https://a.aliexpress.com/_mKN3t2f то нужно раскомментировать эту строку)
 //NRF_NFCT->TASKS_DISABLE = 1; //останавливает таски, если они есть
-//NRF_UICR->NFCPINS = 0;  //отключает nfc и nfc пины становятся доступными для использования
-//NRF_NVMC->CONFIG = 0;   //
+NRF_NVMC->CONFIG = 1; //разрешить запись
+NRF_UICR->NFCPINS = 0; //отключает nfc и nfc пины становятся доступными для использования
+NRF_NVMC->CONFIG = 0; //запретить запись
 #ifdef SERIAL_PRINT
     NRF_UART0->ENABLE = 1;  
 #else
@@ -30,7 +31,7 @@ void setup() {
 }
 
 void presentation() {
-    sendSketchInfo("IoT Manager BME280 Node", "1.0.1");
+    sendSketchInfo("IoT Manager BME280 Node", "1.0.2");
     present(0, S_MULTIMETER);
     present(1, S_TEMP);
     present(2, S_HUM);
@@ -39,12 +40,13 @@ void presentation() {
 }
 
 void loop() {
+    //получение данных для отправки
     float batteryVoltage = (float)hwCPUVoltage() / 1000.00;
     float tmp = bme.readTemperature();
     float hum = bme.readHumidity();
     float prs = bme.readPressure();
     prs = prs / 1.333224 / 100;
-
+    //отправка сообщений. Посленняя отправка должна иметь флаг true, тогда нода уйдет в сон после последней отправки
     sendMsgFastAck(0, V_VOLTAGE, batteryVoltage, false);
     sendMsgFastAck(1, V_TEMP, tmp, false);
     sendMsgFastAck(2, V_HUM, hum, false);
@@ -52,6 +54,8 @@ void loop() {
     SerialPrintln("==============================================");
 }
 
+//эта функция отправляет сообщения любого типа, функция предпринимает несколько попыток отправки в случае неудачи
+//для подтверждения используется ack. Гарантируется доставка до ближайшего узла.
 void sendMsgFastAck(int ChildId, const mysensors_data_t dataType, float value, bool goToSleep) {
     int attempts;
     MyMessage msg(ChildId, dataType);
