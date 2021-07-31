@@ -45,7 +45,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=50100",
+                "PLATFORMIO=50101",
                 "ARDUINO_NRF52_DK",
                 "CONFIG_NFCT_PINS_AS_GPIOS",
                 "ARDUINO=10805",

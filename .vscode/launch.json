@@ -1,5 +1,5 @@
 // AUTOMATICALLY GENERATED FILE. PLEASE DO NOT MODIFY IT MANUALLY
-
+//
 // PIO Unified Debugger
 //
 // Documentation: https://docs.platformio.org/page/plus/debugging.html
@@ -15,12 +15,12 @@
             "executable": "d:/Programming/Projects/MySensors/MySensorsNode/MySensorsBME280Node/.pio/build/nrf52_dk/firmware.elf",
             "projectEnvName": "nrf52_dk",
             "toolchainBinDir": "C:/Users/rises/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "internalConsoleOptions": "openOnSessionStart",
             "svdPath": "C:/Users/rises/.platformio/platforms/nordicnrf52/misc/svd/nrf52.svd",
             "preLaunchTask": {
                 "type": "PlatformIO",
                 "task": "Pre-Debug"
-            },
-            "internalConsoleOptions": "openOnSessionStart"
+            }
         },
         {
             "type": "platformio-debug",
@@ -29,8 +29,8 @@
             "executable": "d:/Programming/Projects/MySensors/MySensorsNode/MySensorsBME280Node/.pio/build/nrf52_dk/firmware.elf",
             "projectEnvName": "nrf52_dk",
             "toolchainBinDir": "C:/Users/rises/.platformio/packages/toolchain-gccarmnoneeabi/bin",
-            "svdPath": "C:/Users/rises/.platformio/platforms/nordicnrf52/misc/svd/nrf52.svd",
-            "internalConsoleOptions": "openOnSessionStart"
+            "internalConsoleOptions": "openOnSessionStart",
+            "svdPath": "C:/Users/rises/.platformio/platforms/nordicnrf52/misc/svd/nrf52.svd"
         }
     ]
 }
