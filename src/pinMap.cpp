@@ -52,6 +52,6 @@ const uint32_t g_ADigitalPinMap[] = {
     27,  // SCL                    (27)
 
     // uart pins==========================
-    12,  // RX                      (8)
-    11   // TX                      (6)
+    8,  // RX                      (8)
+    6   // TX                      (6)
 };
