@@ -10,15 +10,15 @@ void preHwInit() {
 }
 
 void before() {
-    NRF_POWER->DCDCEN = 1;  //включение режима оптимизации питания, расход снижается на 40%, но должны быть установленны емкости (если нода сделана на модуле https://a.aliexpress.com/_mKN3t2f то нужно раскомментировать эту строку)
-    // NRF_NFCT->TASKS_DISABLE = 1; //останавливает таски, если они есть
-    NRF_NVMC->CONFIG = 1;   //разрешить запись
+    NRF_POWER->DCDCEN = 1;        //включение режима оптимизации питания, расход снижается на 40%, но должны быть установленны емкости (если нода сделана на модуле https://a.aliexpress.com/_mKN3t2f то нужно раскомментировать эту строку)
+    NRF_NFCT->TASKS_DISABLE = 1;  //останавливает таски, если они есть
+    // NRF_NVMC->CONFIG = 1;   //разрешить запись
     NRF_UICR->NFCPINS = 0;  //отключает nfc и nfc пины становятся доступными для использования
-    NRF_NVMC->CONFIG = 0;   //запретить запись
+    // NRF_NVMC->CONFIG = 0;  //запретить запись
 #ifdef SERIAL_PRINT
-    NRF_UART0->ENABLE = 1;
+    // NRF_UART0->ENABLE = 1;
 #else
-    NRF_UART0->ENABLE = 0;
+    // NRF_UART0->ENABLE = 0;
 #endif
 }
 
