@@ -57,8 +57,9 @@ void loop() {
 //эта функция отправляет сообщения любого типа, функция предпринимает несколько попыток отправки в случае неудачи
 //для подтверждения используется ack. Гарантируется доставка до ближайшего узла.
 void sendMsgFastAck(int ChildId, const mysensors_data_t dataType, float value, bool goToSleep) {
-    int attempts;
     MyMessage msg(ChildId, dataType);
+#ifdef ACK_MODE
+    int attempts;
     while (!send(msg.set(value, 2), false)) {  //если не отправилось
         attempts++;
         SerialPrintln("Msg " + String(ChildId) + " not delivered, attempt: " + String(attempts));
@@ -71,6 +72,9 @@ void sendMsgFastAck(int ChildId, const mysensors_data_t dataType, float value, b
         }
     }
     SerialPrintln("Msg " + String(ChildId) + " delivered, value = " + String(value));
+#else
+    send(msg.set(value, 2), false);
+#endif
     if (goToSleep) sleep(sleepingPeriod);
 }
 
