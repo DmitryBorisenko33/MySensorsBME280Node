@@ -1,7 +1,7 @@
 #pragma once
 //=======CONFIGURATION=SECTION========
 //#define MY_DEBUG
-//#define SERIAL_PRINT    //эта строка включает печать информации в serial
+#define SERIAL_PRINT    //эта строка включает печать информации в serial
 #define MY_NODE_ID 100  //здесь задается id ноды, если необходимо что бы id выдавал гейт, то нужно закомментировать данную строку
 #define MY_RADIO_NRF5_ESB
 #define MY_PASSIVE_NODE
