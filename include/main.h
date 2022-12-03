@@ -1,6 +1,6 @@
 #pragma once
 //=======CONFIGURATION=SECTION========
-#define MY_DEBUG
+//#define MY_DEBUG
 #define SERIAL_PRINT    //эта строка включает печать информации в serial
 #define MY_NODE_ID 100  //здесь задается id ноды, если необходимо что бы id выдавал гейт, то нужно закомментировать данную строку
 #define MY_RADIO_NRF5_ESB
@@ -24,6 +24,12 @@ extern Adafruit_BME280 bme;
 
 extern uint32_t sleepingPeriod;
 extern uint16_t attamptsNumber;
+extern float valueArr[];
+extern float prevValueArr[];
+
+extern long ticks;
 
 extern void sendMsgFastAck(int ChildId, const mysensors_data_t dataType, float value, bool goToSleep);
+extern bool ifValueChangedEnough(int index, float trashhold);
 extern void SerialPrintln(String text);
+extern void sendValues();

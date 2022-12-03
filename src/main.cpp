@@ -1,8 +1,9 @@
 #include "main.h"
 
-String inMsg = "";
-uint32_t sleepingPeriod = 10000;  //первое число - минуты
-uint16_t attamptsNumber = 5;      //количество попыток повторных пересылок сообщений
+uint32_t sleepingPeriod = 30 * 60 * 1000;  //первое число - минуты
+uint16_t attamptsNumber = 5;               //количество попыток повторных пересылок сообщений
+
+long ticks = 0;
 
 Adafruit_BME280 bme;
 
@@ -32,7 +33,7 @@ void setup() {
 
 void presentation() {
     SerialPrintln("Presentation");
-    sendSketchInfo("IoT Manager BME280 Node", "1.0.2");
+    sendSketchInfo("IoT Manager BME280 Node", "1.0.3");
     present(0, S_MULTIMETER);
     present(1, S_TEMP);
     present(2, S_HUM);
@@ -41,19 +42,49 @@ void presentation() {
     SerialPrintln("Presentation completed");
 }
 
+enum values {
+    vlt,
+    tmp,
+    hum,
+    prs,
+};
+
+float valueArr[prs + 1];
+float prevValueArr[prs + 1];
+
 void loop() {
+    SerialPrintln("Tick: " + String(ticks));
     //получение данных для отправки
-    float batteryVoltage = (float)hwCPUVoltage() / 1000.00;
-    float tmp = bme.readTemperature();
-    float hum = bme.readHumidity();
-    float prs = bme.readPressure();
-    prs = prs / 1.333224 / 100;
-    //отправка сообщений. Посленняя отправка должна иметь флаг true, тогда нода уйдет в сон после последней отправки
-    sendMsgFastAck(0, V_VOLTAGE, batteryVoltage, false);
-    sendMsgFastAck(1, V_TEMP, tmp, false);
-    sendMsgFastAck(2, V_HUM, hum, false);
-    sendMsgFastAck(3, V_PRESSURE, prs, true);
-    SerialPrintln("==============================================");
+    valueArr[vlt] = (float)hwCPUVoltage() / 1000.00;
+    valueArr[tmp] = bme.readTemperature();
+    valueArr[hum] = bme.readHumidity();
+    valueArr[prs] = bme.readPressure() / 1.333224 / 100;
+
+    if (ticks == 0) {  //если первый раз приравняем массивы и отправляем значения как есть
+        SerialPrintln("First loading ");
+        for (int i = 0; i <= prs; i++) {
+            prevValueArr[i] = valueArr[i];
+        }
+        sendValues();
+
+    } else {  //если второй и более раз, то вначале проверяем изменились ли данные, и если одно из значений изменилось шлем все данные
+        if (ifValueChangedEnough(vlt, 0.1) || ifValueChangedEnough(tmp, 1.0) || ifValueChangedEnough(hum, 1.0) || ifValueChangedEnough(prs, 1.0)) {
+            sendValues();
+        } else {
+            SerialPrintln("Go to sleep, no enough value changes detected " + String(sleepingPeriod / 1000) + " sec");
+            sleep(sleepingPeriod);
+        }
+    }
+
+    ticks++;
+}
+
+//отправка сообщений. Посленняя отправка должна иметь флаг true, тогда нода уйдет в сон после последней отправки
+void sendValues() {
+    sendMsgFastAck(vlt, V_VOLTAGE, valueArr[vlt], false);
+    sendMsgFastAck(tmp, V_TEMP, valueArr[tmp], false);
+    sendMsgFastAck(hum, V_HUM, valueArr[hum], false);
+    sendMsgFastAck(prs, V_PRESSURE, valueArr[prs], true);
 }
 
 //эта функция отправляет сообщения любого типа, функция предпринимает несколько попыток отправки в случае неудачи
@@ -78,6 +109,20 @@ void sendMsgFastAck(int ChildId, const mysensors_data_t dataType, float value, b
     send(msg.set(value, 2), false);
 #endif
     if (goToSleep) sleep(sleepingPeriod);
+}
+
+bool ifValueChangedEnough(int index, float trashhold) {
+    bool ret = false;
+    float prevValueUpper = prevValueArr[index] + trashhold;
+    float prevValueLower = prevValueArr[index] - trashhold;
+
+    float currentValue = valueArr[index];
+    if (currentValue > prevValueUpper || currentValue < prevValueLower) {
+        ret = true;
+        SerialPrintln("value " + String(index) + " changed");
+        prevValueArr[index] = valueArr[index];
+    }
+    return ret;
 }
 
 void SerialPrintln(String text) {
