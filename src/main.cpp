@@ -1,11 +1,16 @@
 #include "main.h"
 
-uint32_t sleepingPeriod = 30 * 60 * 1000;  //первое число - минуты
-uint16_t attamptsNumber = 5;               //количество попыток повторных пересылок сообщений
+uint32_t sleepingPeriod = 10000;  // 30 * 60 * 1000;  //первое число - минуты
+uint16_t attamptsNumber = 5;      //количество попыток повторных пересылок сообщений
 
 long ticks = 0;
 
 Adafruit_BME280 bme;
+
+NodeValue* vltValue;
+NodeValue* tmpValue;
+NodeValue* humValue;
+NodeValue* prsValue;
 
 void preHwInit() {
 }
@@ -29,6 +34,11 @@ void setup() {
     bme.getPressureSensor();
     bme.getHumiditySensor();
     bme.begin(0x76);
+
+    vltValue = new NodeValue(0, V_VOLTAGE, 5, 0.1, false);
+    tmpValue = new NodeValue(1, V_TEMP, 5, 1, false);
+    humValue = new NodeValue(2, V_HUM, 5, 1, false);
+    prsValue = new NodeValue(3, V_PRESSURE, 5, 1, true);
 }
 
 void presentation() {
@@ -42,91 +52,104 @@ void presentation() {
     SerialPrintln("Presentation completed");
 }
 
-enum values {
-    vlt,
-    tmp,
-    hum,
-    prs,
-};
-
-float valueArr[prs + 1];
-float prevValueArr[prs + 1];
-
 void loop() {
-    SerialPrintln("Tick: " + String(ticks));
-    //получение данных для отправки
-    valueArr[vlt] = (float)hwCPUVoltage() / 1000.00;
-    valueArr[tmp] = bme.readTemperature();
-    valueArr[hum] = bme.readHumidity();
-    valueArr[prs] = bme.readPressure() / 1.333224 / 100;
+    SerialPrintln("==================== Tick: " + String(ticks) + " ====================");
 
-    if (ticks == 0) {  //если первый раз приравняем массивы и отправляем значения как есть
-        SerialPrintln("First loading ");
-        for (int i = 0; i <= prs; i++) {
-            prevValueArr[i] = valueArr[i];
-        }
-        sendValues();
-
-    } else {  //если второй и более раз, то вначале проверяем изменились ли данные, и если одно из значений изменилось шлем все данные
-        if (ifValueChangedEnough(vlt, 0.1) || ifValueChangedEnough(tmp, 1.0) || ifValueChangedEnough(hum, 1.0) || ifValueChangedEnough(prs, 1.0)) {
-            sendValues();
-        } else {
-            SerialPrintln("Go to sleep, no enough value changes detected " + String(sleepingPeriod / 1000) + " sec");
-            sleep(sleepingPeriod);
-        }
-    }
+    vltValue->handleValue((float)hwCPUVoltage() / 1000.00);
+    tmpValue->handleValue(bme.readTemperature());
+    humValue->handleValue(bme.readHumidity());
+    prsValue->handleValue(bme.readPressure() / 1.333224 / 100);
 
     ticks++;
-}
-
-//отправка сообщений. Посленняя отправка должна иметь флаг true, тогда нода уйдет в сон после последней отправки
-void sendValues() {
-    sendMsgFastAck(vlt, V_VOLTAGE, valueArr[vlt], false);
-    sendMsgFastAck(tmp, V_TEMP, valueArr[tmp], false);
-    sendMsgFastAck(hum, V_HUM, valueArr[hum], false);
-    sendMsgFastAck(prs, V_PRESSURE, valueArr[prs], true);
-}
-
-//эта функция отправляет сообщения любого типа, функция предпринимает несколько попыток отправки в случае неудачи
-//для подтверждения используется ack. Гарантируется доставка до ближайшего узла.
-void sendMsgFastAck(int ChildId, const mysensors_data_t dataType, float value, bool goToSleep) {
-    MyMessage msg(ChildId, dataType);
-#ifdef ACK_MODE
-    int attempts;
-    while (!send(msg.set(value, 2), false)) {  //если не отправилось
-        attempts++;
-        SerialPrintln("Msg " + String(ChildId) + " not delivered, attempt: " + String(attempts));
-        _transportSM.failedUplinkTransmissions = 0;
-        wait(10);
-        if (attempts >= attamptsNumber) {
-            attempts = 0;
-            SerialPrintln("Go to sleep, gate missing, try again after " + String(sleepingPeriod / 1000) + " sec");
-            sleep(sleepingPeriod);
-        }
-    }
-    SerialPrintln("Msg " + String(ChildId) + " delivered, value = " + String(value));
-#else
-    send(msg.set(value, 2), false);
-#endif
-    if (goToSleep) sleep(sleepingPeriod);
-}
-
-bool ifValueChangedEnough(int index, float trashhold) {
-    bool ret = false;
-    float prevValueUpper = prevValueArr[index] + trashhold;
-    float prevValueLower = prevValueArr[index] - trashhold;
-
-    float currentValue = valueArr[index];
-    if (currentValue > prevValueUpper || currentValue < prevValueLower) {
-        ret = true;
-        SerialPrintln("value " + String(index) + " changed");
-        prevValueArr[index] = valueArr[index];
-    }
-    return ret;
 }
 
 void SerialPrintln(String text) {
 #ifdef SERIAL_PRINT
     Serial.println(text);
 #endif
+}
+
+//класс датчика===============================================================================================
+
+NodeValue::NodeValue(int childId, const mysensors_data_t dataType, int attamptsNumber, float trashhold, bool goToSleep) {
+    firstInit = true;
+    _childId = childId;
+    _dataType = dataType;
+    _attamptsNumber = attamptsNumber;
+    _trashhold = trashhold;
+    _goToSleep = goToSleep;
+}
+
+NodeValue::~NodeValue() {
+}
+
+void NodeValue::handleValue(float value) {
+    _value = value;
+    //если устройство было включено первый раз
+    if (firstInit) {
+        firstInit = false;
+        SerialPrintln("First loading");
+        //приравняем предыдущее значение и полученное что бы начать отсчет
+        _prevValue = _value;
+        //отправим значение
+        sendMsgAndGoToSleep();
+    } else {
+        //если устройство вышло из сна, проверим изменилось ли значение достаточно
+        //здесь нужен перебор вектора
+        if (isValueChangedEnough()) {
+            sendMsgAndGoToSleep();
+        } else {
+            sleep(sleepingPeriod);
+        }
+    }
+}
+
+void NodeValue::sendMsgAndGoToSleep() {
+    if (sendMsgFastAck()) {
+        SerialPrintln("Msg " + String(_childId) + " delivered, value = " + String(_value));
+    } else {
+        //если значение не отправилось с нескольких попыток то гейт выключен - идем в сон
+        SerialPrintln("Go to sleep, gate missing, try again after " + String(sleepingPeriod / 1000) + " sec");
+        sleep(sleepingPeriod);
+    }
+    //если эта величина последняя для отправки - то уходим в сон
+    if (_goToSleep) {
+        sleep(sleepingPeriod);
+    }
+}
+
+float NodeValue::getValue() {
+    return _value;
+}
+
+bool NodeValue::sendMsgFastAck() {
+    MyMessage msg(_childId, _dataType);
+    bool ret = true;
+#ifdef ACK_MODE
+    int attempts;
+    while (!send(msg.set(_value, 2), false)) {  //если не отправилось
+        attempts++;
+        SerialPrintln("Msg " + String(_childId) + " not delivered, attempt: " + String(attempts));
+        _transportSM.failedUplinkTransmissions = 0;
+        wait(10);
+        if (attempts >= _attamptsNumber) {
+            attempts = 0;
+            ret = false;
+        }
+    }
+
+#else
+    ret = send(msg.set(value, 2), false);
+#endif
+    return ret;
+}
+
+bool NodeValue::isValueChangedEnough() {
+    bool ret = false;
+    if (_value > (_prevValue + _trashhold / 2) || _value < (_prevValue - _trashhold / 2)) {
+        ret = true;
+        SerialPrintln("value " + String(_childId) + " changed");
+        _prevValue = _value;
+    }
+    return ret;
 }
