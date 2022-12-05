@@ -1,7 +1,6 @@
 #include "main.h"
 
-uint32_t sleepingPeriod = 10000;  // 30 * 60 * 1000;  //первое число - минуты
-uint16_t attamptsNumber = 5;      //количество попыток повторных пересылок сообщений
+uint32_t sleepingPeriod = 30 * 60 * 1000;  //первое число - минуты
 
 long ticks = 0;
 
@@ -35,15 +34,17 @@ void setup() {
     bme.getHumiditySensor();
     bme.begin(0x76);
 
+    //четвертой величиной указываем зазор при привышении которого значение будет отправлено
+    //аоследняя запись должна иметь флаг true что бы указать классу когда уходить в сон
     vltValue = new NodeValue(0, V_VOLTAGE, 5, 0.1, false);
-    tmpValue = new NodeValue(1, V_TEMP, 5, 1, false);
-    humValue = new NodeValue(2, V_HUM, 5, 1, false);
-    prsValue = new NodeValue(3, V_PRESSURE, 5, 1, true);
+    tmpValue = new NodeValue(1, V_TEMP, 5, 0.5, false);
+    humValue = new NodeValue(2, V_HUM, 5, 0.5, false);
+    prsValue = new NodeValue(3, V_PRESSURE, 5, 0.5, true);
 }
 
 void presentation() {
     SerialPrintln("Presentation");
-    sendSketchInfo("IoT Manager BME280 Node", "1.0.3");
+    sendSketchInfo("IoT Manager BME280 Node", "2.0.0");
     present(0, S_MULTIMETER);
     present(1, S_TEMP);
     present(2, S_HUM);
@@ -95,10 +96,11 @@ void NodeValue::handleValue(float value) {
         sendMsgAndGoToSleep();
     } else {
         //если устройство вышло из сна, проверим изменилось ли значение достаточно
-        //здесь нужен перебор вектора
         if (isValueChangedEnough()) {
+            //если изменилось то делаем отправку
             sendMsgAndGoToSleep();
-        } else {
+            //если эта величина последняя для отправки - то уходим в сон
+        } else if (_goToSleep) {
             sleep(sleepingPeriod);
         }
     }
@@ -106,7 +108,7 @@ void NodeValue::handleValue(float value) {
 
 void NodeValue::sendMsgAndGoToSleep() {
     if (sendMsgFastAck()) {
-        SerialPrintln("Msg " + String(_childId) + " delivered, value = " + String(_value));
+        SerialPrintln("Msg " + String(_childId) + " delivered, diff = " + (String(diff)) + ", value = " + String(_value));
     } else {
         //если значение не отправилось с нескольких попыток то гейт выключен - идем в сон
         SerialPrintln("Go to sleep, gate missing, try again after " + String(sleepingPeriod / 1000) + " sec");
@@ -126,7 +128,7 @@ bool NodeValue::sendMsgFastAck() {
     MyMessage msg(_childId, _dataType);
     bool ret = true;
 #ifdef ACK_MODE
-    int attempts;
+    int attempts = 0;
     while (!send(msg.set(_value, 2), false)) {  //если не отправилось
         attempts++;
         SerialPrintln("Msg " + String(_childId) + " not delivered, attempt: " + String(attempts));
@@ -135,9 +137,9 @@ bool NodeValue::sendMsgFastAck() {
         if (attempts >= _attamptsNumber) {
             attempts = 0;
             ret = false;
+            break;
         }
     }
-
 #else
     ret = send(msg.set(value, 2), false);
 #endif
@@ -146,9 +148,10 @@ bool NodeValue::sendMsgFastAck() {
 
 bool NodeValue::isValueChangedEnough() {
     bool ret = false;
-    if (_value > (_prevValue + _trashhold / 2) || _value < (_prevValue - _trashhold / 2)) {
+    diff = _value - _prevValue;
+    if (_value > (_prevValue + _trashhold) || _value < (_prevValue - _trashhold)) {
         ret = true;
-        SerialPrintln("value " + String(_childId) + " changed");
+        // SerialPrintln("value " + String(_childId) + " changed");
         _prevValue = _value;
     }
     return ret;

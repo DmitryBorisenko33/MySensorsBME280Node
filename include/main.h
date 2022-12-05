@@ -1,11 +1,10 @@
 #pragma once
 //=======CONFIGURATION=SECTION========
 //#define MY_DEBUG
-#define SERIAL_PRINT    //эта строка включает печать информации в serial
+//#define SERIAL_PRINT    //эта строка включает печать информации в serial
 #define MY_NODE_ID 100  //здесь задается id ноды, если необходимо что бы id выдавал гейт, то нужно закомментировать данную строку
 #define MY_RADIO_NRF5_ESB
 //#define MY_PASSIVE_NODE  //включение пассивного режима ноды, в этом режиме нода не будет ждать подтвержения получения сообщения
-
 //=====================================
 
 #ifndef MY_PASSIVE_NODE
@@ -47,7 +46,7 @@ class NodeValue {
     int _childId;
     mysensors_data_t _dataType;
     bool firstInit = true;
-    float _value, _prevValue, _trashhold;
+    float _value, _prevValue, _trashhold, diff = 0;
     int _attamptsNumber;
 };
 
