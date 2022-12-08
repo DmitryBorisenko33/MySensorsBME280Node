@@ -44,7 +44,7 @@ void setup() {
 
 void presentation() {
     SerialPrintln("Presentation");
-    sendSketchInfo("IoT Manager BME280 Node", "2.0.0");
+    sendSketchInfo("IoT Manager BME280 Node", "2.0.1");
     present(0, S_MULTIMETER);
     present(1, S_TEMP);
     present(2, S_HUM);
