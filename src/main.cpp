@@ -1,6 +1,6 @@
 #include "main.h"
 
-uint32_t sleepingPeriod = 30 * 60 * 1000;  //первое число - минуты
+uint32_t sleepingPeriod = 30 * 60 * 1000;  // первое число - минуты
 
 long ticks = 0;
 
@@ -15,10 +15,10 @@ void preHwInit() {
 }
 
 void before() {
-    NRF_POWER->DCDCEN = 1;        //включение режима оптимизации питания, расход снижается на 40%, но должны быть установленны емкости (если нода сделана на модуле https://a.aliexpress.com/_mKN3t2f то нужно раскомментировать эту строку)
-    NRF_NFCT->TASKS_DISABLE = 1;  //останавливает таски, если они есть
+    NRF_POWER->DCDCEN = 1;        // включение режима оптимизации питания, расход снижается на 40%, но должны быть установленны емкости (если нода сделана на модуле https://a.aliexpress.com/_mKN3t2f то нужно раскомментировать эту строку)
+    NRF_NFCT->TASKS_DISABLE = 1;  // останавливает таски, если они есть
     // NRF_NVMC->CONFIG = 1;   //разрешить запись
-    NRF_UICR->NFCPINS = 0;  //отключает nfc и nfc пины становятся доступными для использования
+    NRF_UICR->NFCPINS = 0;  // отключает nfc и nfc пины становятся доступными для использования
     // NRF_NVMC->CONFIG = 0;  //запретить запись
 #ifdef SERIAL_PRINT
     // NRF_UART0->ENABLE = 1;
@@ -34,11 +34,11 @@ void setup() {
     bme.getHumiditySensor();
     bme.begin(0x76);
 
-    //четвертой величиной указываем зазор при привышении которого значение будет отправлено
-    //последняя запись должна иметь флаг true что бы указать классу когда уходить в сон
+    // четвертой величиной указываем зазор при привышении которого значение будет отправлено
+    // последняя запись должна иметь флаг true что бы указать классу когда уходить в сон
     vltValue = new NodeValue(0, V_VOLTAGE, 5, 0.1, false);
-    tmpValue = new NodeValue(1, V_TEMP, 5, 0.5, false);
-    humValue = new NodeValue(2, V_HUM, 5, 0.5, false);
+    tmpValue = new NodeValue(1, V_TEMP, 5, 0.15, false);
+    humValue = new NodeValue(2, V_HUM, 5, 0.3, false);
     prsValue = new NodeValue(3, V_PRESSURE, 5, 0.5, true);
 }
 
@@ -70,7 +70,7 @@ void SerialPrintln(String text) {
 #endif
 }
 
-//класс датчика===============================================================================================
+// класс датчика===============================================================================================
 
 NodeValue::NodeValue(int childId, const mysensors_data_t dataType, int attamptsNumber, float trashhold, bool goToSleep) {
     firstInit = true;
@@ -86,20 +86,20 @@ NodeValue::~NodeValue() {
 
 void NodeValue::handleValue(float value) {
     _value = value;
-    //если устройство было включено первый раз
+    // если устройство было включено первый раз
     if (firstInit) {
         firstInit = false;
         SerialPrintln("First loading");
-        //приравняем предыдущее значение и полученное что бы начать отсчет
+        // приравняем предыдущее значение и полученное что бы начать отсчет
         _prevValue = _value;
-        //отправим значение
+        // отправим значение
         sendMsgAndGoToSleep();
     } else {
-        //если устройство вышло из сна, проверим изменилось ли значение достаточно
+        // если устройство вышло из сна, проверим изменилось ли значение достаточно
         if (isValueChangedEnough()) {
-            //если изменилось то делаем отправку
+            // если изменилось то делаем отправку
             sendMsgAndGoToSleep();
-            //если эта величина последняя для отправки - то уходим в сон
+            // если эта величина последняя для отправки - то уходим в сон
         } else if (_goToSleep) {
             sleep(sleepingPeriod);
         }
@@ -110,11 +110,11 @@ void NodeValue::sendMsgAndGoToSleep() {
     if (sendMsgFastAck()) {
         SerialPrintln("Msg " + String(_childId) + " delivered, diff = " + (String(diff)) + ", value = " + String(_value));
     } else {
-        //если значение не отправилось с нескольких попыток то гейт выключен - идем в сон
+        // если значение не отправилось с нескольких попыток то гейт выключен - идем в сон
         SerialPrintln("Go to sleep, gate missing, try again after " + String(sleepingPeriod / 1000) + " sec");
         sleep(sleepingPeriod);
     }
-    //если эта величина последняя для отправки - то уходим в сон
+    // если эта величина последняя для отправки - то уходим в сон
     if (_goToSleep) {
         sleep(sleepingPeriod);
     }
@@ -129,7 +129,7 @@ bool NodeValue::sendMsgFastAck() {
     bool ret = true;
 #ifdef ACK_MODE
     int attempts = 0;
-    while (!send(msg.set(_value, 2), false)) {  //если не отправилось
+    while (!send(msg.set(_value, 2), false)) {  // если не отправилось
         attempts++;
         SerialPrintln("Msg " + String(_childId) + " not delivered, attempt: " + String(attempts));
         _transportSM.failedUplinkTransmissions = 0;
